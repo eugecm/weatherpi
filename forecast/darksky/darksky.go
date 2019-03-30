@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/eugecm/weatherpi/weather"
+	"github.com/eugecm/weatherpi/forecast"
 )
 
 // Config represents the configuration parameters for the DarkSky API client
@@ -74,7 +74,7 @@ func (d *DarkSky) doForecast(lat, lon string, t time.Time) (*forecastResponse, e
 }
 
 // Forecast returns the forecast for a given day using the DarkSky API
-func (d *DarkSky) Forecast(lat, lon string, t time.Time) (weather.Forecast, error) {
+func (d *DarkSky) Forecast(lat, lon string, t time.Time) (forecast.Forecast, error) {
 	// Truncate time to day to make sure we get 24 hours of forecast
 	t = t.Truncate(24 * time.Hour)
 
@@ -82,14 +82,14 @@ func (d *DarkSky) Forecast(lat, lon string, t time.Time) (weather.Forecast, erro
 	rsp, err := d.doForecast(lat, lon, t)
 	if err != nil {
 		log.Printf("Error while making call to DarkSky forecast API: %v\n", err)
-		return weather.Forecast{}, err
+		return forecast.Forecast{}, err
 	}
 
 	// TODO: Perform some validation
 
-	f := weather.Forecast{}
+	f := forecast.Forecast{}
 	for _, hour := range rsp.Hourly.Data {
-		f.Hourly = append(f.Hourly, weather.TimedForecast{
+		f.Hourly = append(f.Hourly, forecast.TimedForecast{
 			At: time.Unix(hour.Time, 0),
 			PrecipitationIntensity: hour.PrecipitationIntensity,
 			PrecipitationChance:    hour.PrecipitationProbability,

@@ -8,8 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/eugecm/weatherpi/weather"
-	"github.com/eugecm/weatherpi/weather/backend/darksky"
+	"github.com/eugecm/weatherpi/forecast/darksky"
 	rpio "github.com/stianeikeland/go-rpio"
 )
 
@@ -36,10 +35,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	f, err := setupDarkSky()
-	if err != nil {
-		log.Fatalln(err)
+	secret := os.Getenv("DARKSKY_SECRET_KEY")
+	if secret == "" {
+		fmt.Fprintln(os.Stderr, "No secret key specified. Set up DARKSKY_SECRET_KEY environment variable")
+		os.Exit(1)
 	}
+
+	f := darksky.New(darksky.Config{
+		Key: secret,
+	})
 
 	forecast, err := f.Forecast(*lat, *lon, time.Now())
 	if err != nil {
@@ -88,17 +92,6 @@ func main() {
 	switchChanceIndicator(worstChance)
 }
 
-func setupDarkSky() (weather.Forecaster, error) {
-	secret := os.Getenv("DARKSKY_SECRET_KEY")
-	if secret == "" {
-		return nil, fmt.Errorf("No secret key specified. Set up DARKSKY_SECRET_KEY environment variable")
-	}
-
-	return darksky.New(darksky.Config{
-		Key: secret,
-	}), nil
-}
-
 func switchChanceIndicator(level float64) {
 	switch {
 	case level <= 0.05:
@@ -135,7 +128,15 @@ func initGPIO() {
 		panic(err)
 	}
 
-	for _, p := range []int{gpioPinMorningIndicator, gpioPinEveningIndicator, gpioPinLowChanceIndicator, gpioPinHighChanceIndicator, gpioPinMediumChanceIndicator} {
+	pins := []int{
+		gpioPinMorningIndicator,
+		gpioPinEveningIndicator,
+		gpioPinLowChanceIndicator,
+		gpioPinHighChanceIndicator,
+		gpioPinMediumChanceIndicator,
+	}
+
+	for _, p := range pins {
 		pin := rpio.Pin(p)
 		pin.Output()
 	}
